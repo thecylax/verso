@@ -1,0 +1,7 @@
+{
+    "python.defaultInterpreterPath": "${workspaceFolder}/apps/api/.venv/Scripts/python.exe",
+    "python.envFile": "${workspaceFolder}/apps/api/.env",
+    "python.testing.pytestEnabled": true,
+    "python.testing.cwd": "${workspaceFolder}/apps/api",
+    "python.testing.pytestArgs": ["tests"]
+}

@@ -1,0 +1,15 @@
+.env
+node_modules/
+.pnpm-store/
+.svelte-kit/
+build/
+dist/
+dev-dist/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.venv/
+*.db
+*.db-shm
+*.db-wal

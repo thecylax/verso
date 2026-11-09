@@ -1,0 +1,53 @@
+name: verso
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: verso
+      POSTGRES_PASSWORD: verso
+      POSTGRES_DB: verso
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U verso -d verso"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./apps/api
+    env_file: .env
+    environment:
+      WATCHFILES_FORCE_POLLING: "true"
+    working_dir: /repo/apps/api
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/repo
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build: ./apps/web
+    environment:
+      API_PROXY_TARGET: http://api:8000
+      CHOKIDAR_USEPOLLING: "true"
+      pnpm_config_store_dir: /repo/apps/web/node_modules/.pnpm-store
+    working_dir: /repo/apps/web
+    command: pnpm dev --host 0.0.0.0 --port 5173
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/repo
+      - web_node_modules:/repo/apps/web/node_modules
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  web_node_modules:

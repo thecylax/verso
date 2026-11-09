@@ -1,0 +1,156 @@
+@import 'tailwindcss';
+@import './lib/glass.css';
+
+:root {
+	color-scheme: dark;
+	--reading-font-size: 18px;
+}
+
+html,
+body {
+	background: #0b1220;
+	color: #e2e8f0;
+	-webkit-tap-highlight-color: transparent;
+}
+
+body {
+	font-family:
+		ui-sans-serif,
+		system-ui,
+		-apple-system,
+		'Segoe UI',
+		Roboto,
+		sans-serif;
+}
+
+@layer components {
+.field {
+	border-radius: 0.5rem;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+	background: rgba(2, 6, 23, 0.55);
+	padding: 0.6rem 0.75rem;
+	font-size: 16px;
+	color: #f8fafc;
+}
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	border-radius: 0.5rem;
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	background: #1e293b;
+	padding: 0.5rem 0.85rem;
+	font-size: 0.9rem;
+	font-weight: 500;
+	color: #e2e8f0;
+	white-space: nowrap;
+}
+.btn:hover {
+	background: #334155;
+}
+.btn:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+.btn-primary {
+	background: #0ea5e9;
+	border-color: transparent;
+	color: #020617;
+	font-weight: 600;
+}
+.btn-primary:hover {
+	background: #38bdf8;
+}
+.btn-danger {
+	color: #fecaca;
+}
+.btn-danger:hover {
+	background: rgba(239, 68, 68, 0.25);
+}
+}
+
+:focus-visible {
+	outline: 2px solid #93c5fd;
+	outline-offset: 2px;
+}
+
+.reading {
+	color: #f8fafc;
+	font-size: var(--reading-font-size);
+	line-height: 1.6;
+}
+
+.reading h1,
+.reading h2,
+.reading h3,
+.reading h4,
+.reading h5,
+.reading h6 {
+	font-weight: 700;
+	line-height: 1.25;
+	margin: 1.2em 0 0.5em;
+}
+.reading h1 {
+	font-size: 1.8em;
+}
+.reading h2 {
+	font-size: 1.5em;
+}
+.reading h3 {
+	font-size: 1.25em;
+}
+.reading h4,
+.reading h5,
+.reading h6 {
+	font-size: 1.1em;
+}
+.reading p,
+.reading ul,
+.reading ol,
+.reading blockquote,
+.reading pre {
+	margin: 0 0 0.9em;
+}
+.reading ul {
+	list-style: disc;
+	padding-left: 1.4em;
+}
+.reading ol {
+	list-style: decimal;
+	padding-left: 1.4em;
+}
+.reading blockquote {
+	border-left: 4px solid #475569;
+	padding-left: 0.9em;
+	color: #cbd5e1;
+}
+.reading code {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 0.9em;
+	background: #1e293b;
+	border-radius: 4px;
+	padding: 0.1em 0.3em;
+}
+.reading pre {
+	background: #1e293b;
+	border-radius: 8px;
+	padding: 0.8em 1em;
+	overflow-x: auto;
+}
+.reading pre code {
+	background: none;
+	padding: 0;
+}
+.reading a {
+	color: #93c5fd;
+	text-decoration: underline;
+}
+.reading hr {
+	border-color: #334155;
+	margin: 1.5em 0;
+}
+.reading section > :first-child {
+	margin-top: 0;
+}
