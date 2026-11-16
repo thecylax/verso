@@ -11,7 +11,10 @@
 		type Folder,
 		type User
 	} from '$lib/api';
+	import FolderDialog from '$lib/components/FolderDialog.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import { session } from '$lib/session.svelte';
+	import { faFileLines, faFolder, faPen, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 
 	let { folderId }: { folderId: string | null } = $props();
 
@@ -21,6 +24,11 @@
 	let loading = $state(true);
 	let missing = $state(false);
 	let notice = $state('');
+	let dialog = $state<
+		{ mode: 'create' } | { mode: 'rename'; folder: Folder } | { mode: 'delete'; folder: Folder } | null
+	>(null);
+	let dialogBusy = $state(false);
+	let dialogError = $state('');
 
 	const newNoteHref = $derived(folderId ? `/app/notas/nova?pasta=${folderId}` : '/app/notas/nova');
 	const isEmpty = $derived(!loading && folders.length === 0 && documents.length === 0);
@@ -44,31 +52,36 @@
 
 	onMount(load);
 
-	async function run(action: () => Promise<unknown>) {
-		notice = '';
+	function openDialog(next: NonNullable<typeof dialog>) {
+		dialogError = '';
+		dialogBusy = false;
+		dialog = next;
+	}
+
+	async function submitDialog(name: string) {
+		if (!dialog || dialogBusy) return;
+		const current = dialog;
+		if (current.mode === 'rename' && name === current.folder.name) {
+			dialog = null;
+			return;
+		}
+		dialogError = '';
+		dialogBusy = true;
 		try {
-			await action();
+			if (current.mode === 'create') {
+				await api('/folders', 'POST', { name, parent_id: folderId });
+			} else if (current.mode === 'rename') {
+				await api(`/folders/${current.folder.id}`, 'PATCH', { name });
+			} else {
+				await api(`/folders/${current.folder.id}`, 'DELETE');
+			}
+			dialog = null;
 			await load();
 		} catch (error) {
-			notice = error instanceof Error ? error.message : 'Algo deu errado.';
+			dialogError = error instanceof Error ? error.message : 'Algo deu errado.';
+		} finally {
+			dialogBusy = false;
 		}
-	}
-
-	function newFolder() {
-		const name = prompt('Nome da nova pasta');
-		if (name === null || !name.trim()) return;
-		run(() => api('/folders', 'POST', { name, parent_id: folderId }));
-	}
-
-	function renameFolder(folder: Folder) {
-		const name = prompt('Novo nome da pasta', folder.name);
-		if (name === null || !name.trim() || name.trim() === folder.name) return;
-		run(() => api(`/folders/${folder.id}`, 'PATCH', { name }));
-	}
-
-	function deleteFolder(folder: Folder) {
-		if (!confirm(`Apagar a pasta “${folder.name}”?`)) return;
-		run(() => api(`/folders/${folder.id}`, 'DELETE'));
 	}
 
 	async function changeVersion(event: Event) {
@@ -91,7 +104,9 @@
 	}
 </script>
 
-<div class="mx-auto flex min-h-dvh max-w-6xl flex-col px-4 pt-4 pb-10 sm:px-6" style="padding-top: max(1rem, env(safe-area-inset-top))">
+<div class="relative mx-auto flex min-h-dvh max-w-6xl flex-col px-4 pt-4 pb-10 sm:px-6" style="padding-top: max(1rem, env(safe-area-inset-top))">
+	<img class="brand-mark" src="/icon-512.png" alt="" />
+	<div class="relative z-10 flex min-h-0 flex-1 flex-col">
 	<header class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
 		<nav aria-label="Trilha" class="min-w-0 flex-1">
 			<ol class="flex flex-wrap items-center gap-1 text-lg">
@@ -139,8 +154,8 @@
 		</div>
 	{:else}
 		<div class="flex flex-wrap gap-2 py-4">
-			<button class="btn" type="button" onclick={newFolder}>Nova pasta</button>
-			<a class="btn btn-primary" href={newNoteHref}>Nova nota</a>
+			<button class="btn" type="button" onclick={() => openDialog({ mode: 'create' })}>Nova pasta</button>
+			<a class="btn btn-accent" href={newNoteHref}>Nova nota</a>
 		</div>
 
 		{#if notice}
@@ -151,8 +166,8 @@
 			<div class="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-white/15 py-16 text-center">
 				<p class="text-slate-300">Nada por aqui ainda.</p>
 				<div class="flex gap-2">
-					<button class="btn" type="button" onclick={newFolder}>Nova pasta</button>
-					<a class="btn btn-primary" href={newNoteHref}>Nova nota</a>
+					<button class="btn" type="button" onclick={() => openDialog({ mode: 'create' })}>Nova pasta</button>
+					<a class="btn btn-accent" href={newNoteHref}>Nova nota</a>
 				</div>
 			</div>
 		{:else if !loading}
@@ -160,29 +175,58 @@
 				{#each folders as folder (folder.id)}
 					<li class="flex items-center gap-2 rounded-xl border border-white/10 bg-slate-900/70 p-3 hover:border-sky-400/50">
 						<a class="flex min-w-0 flex-1 items-center gap-3 py-1" href="/app/pastas/{folder.id}">
-							<span aria-hidden="true" class="text-xl">📁</span>
+							<Icon class="text-xl text-sky-300" icon={faFolder} />
 							<span class="truncate font-medium">{folder.name}</span>
 						</a>
-						<button class="btn px-2 py-1 text-xs" type="button" onclick={() => renameFolder(folder)} aria-label="Renomear pasta {folder.name}">
-							Renomear
+						<button class="btn h-9 w-9 p-0 text-sm" type="button" onclick={() => openDialog({ mode: 'rename', folder })} aria-label="Renomear pasta {folder.name}" title="Renomear">
+							<Icon icon={faPen} />
 						</button>
-						<button class="btn btn-danger px-2 py-1 text-xs" type="button" onclick={() => deleteFolder(folder)} aria-label="Apagar pasta {folder.name}">
-							Apagar
+						<button class="btn btn-danger h-9 w-9 p-0 text-sm" type="button" onclick={() => openDialog({ mode: 'delete', folder })} aria-label="Apagar pasta {folder.name}" title="Apagar">
+							<Icon icon={faTrashCan} />
 						</button>
 					</li>
 				{/each}
 				{#each documents as document (document.id)}
 					<li>
 						<a
-							class="flex h-full flex-col gap-1 rounded-xl border border-white/10 bg-slate-900/40 p-4 hover:border-sky-400/50"
+							class="flex h-full items-start gap-3 rounded-xl border border-white/10 bg-slate-900/40 p-4 hover:border-sky-400/50"
 							href="/app/notas/{document.id}"
 						>
-							<span class="line-clamp-2 font-semibold text-slate-100">{document.title}</span>
-							<time class="text-sm text-slate-400" datetime={document.created_at}>{formatDate(document.created_at)}</time>
+							<Icon class="mt-0.5 text-xl text-sky-300" icon={faFileLines} />
+							<span class="flex min-w-0 flex-col gap-1">
+								<span class="line-clamp-2 font-semibold text-slate-100">{document.title}</span>
+								<time class="text-sm text-slate-400" datetime={document.created_at}>{formatDate(document.created_at)}</time>
+							</span>
 						</a>
 					</li>
 				{/each}
 			</ul>
 		{/if}
 	{/if}
+	</div>
 </div>
+
+{#if dialog}
+	<FolderDialog
+		mode={dialog.mode}
+		initialName={dialog.mode === 'create' ? '' : dialog.folder.name}
+		busy={dialogBusy}
+		error={dialogError}
+		onclose={() => (dialog = null)}
+		onsubmit={submitDialog}
+	/>
+{/if}
+
+<style>
+	.brand-mark {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		z-index: 0;
+		width: min(78vmin, 34rem);
+		transform: translate(-50%, -50%);
+		opacity: 0.55;
+		pointer-events: none;
+		user-select: none;
+	}
+</style>

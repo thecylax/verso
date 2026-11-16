@@ -116,7 +116,19 @@ Onde a Fullscreen API funcionar, usá-la no elemento da apresentação. Onde fal
 
 ### RF-013 — Cronômetro
 
-Ao entrar na apresentação, um cronômetro visível começa em `00:00` e conta o tempo decorrido. Toque ou clique pausa e retoma. Tempo pausado não entra na contagem. A partir de 60 minutos o formato passa a `h:mm:ss`. Sair da apresentação zera o cronômetro.
+Ao entrar na apresentação, um cronômetro visível começa a correr. Toque ou clique pausa e retoma. Tempo pausado não entra na contagem. Sair da apresentação zera o cronômetro.
+
+Uma linha própria da nota, fora de cerca de código, define um alvo:
+
+```markdown
+[[tempo 15m alerta 2m]]
+```
+
+`15m` é a duração. O relógio começa nesse valor e conta para trás. `alerta 2m` é o tempo restante a partir do qual os dígitos ficam vermelhos e pulsam de forma discreta. A pulsação acompanha o relógio correndo: pausado, ou com redução de movimento pedida pelo sistema, os dígitos ficam vermelhos e parados. Sem `alerta`, a cor não muda.
+
+A duração junta horas, minutos e segundos: `15m`, `15min`, `90s`, `1h30m`, `1h 30m`. O alvo precisa ser maior que zero. `alerta 0s` muda a cor ao chegar em `00:00`. A primeira diretiva válida vale. Linha inválida permanece no texto. Diretiva dentro de cerca é ignorada. As linhas válidas somem na visualização e na apresentação e continuam na fonte.
+
+Depois do zero o relógio segue, com sinal negativo (`-00:01`). O sinal entra no segundo cheio. Abaixo de 1 hora, `mm:ss`; a partir de 1 hora, `h:mm:ss`, nos dois sentidos. Sem a diretiva, a contagem continua para a frente a partir de `00:00`.
 
 ### RF-014 — Avançar e voltar tópico
 

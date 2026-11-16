@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { dismissToast, toasts, type ToastKind } from '$lib/toast.svelte';
+	import Icon from '$lib/components/Icon.svelte';
+	import { faXmark } from '@fortawesome/free-solid-svg-icons';
 
 	const ACCENT: Record<ToastKind, string> = {
 		info: 'border-l-sky-400',
@@ -24,7 +26,7 @@
 				class="-my-1 rounded px-1 text-slate-300 hover:text-white"
 				type="button"
 				aria-label="Fechar aviso"
-				onclick={() => dismissToast(toast.id)}>×</button
+				onclick={() => dismissToast(toast.id)}><Icon icon={faXmark} /></button
 			>
 		</div>
 	{/each}

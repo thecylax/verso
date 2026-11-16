@@ -63,11 +63,22 @@ body {
 .btn-primary:hover {
 	background: #38bdf8;
 }
+.btn-accent {
+	background: rgba(14, 165, 233, 0.18);
+	border-color: transparent;
+	color: #bae6fd;
+	font-weight: 600;
+}
+.btn-accent:hover {
+	background: rgba(14, 165, 233, 0.3);
+}
 .btn-danger {
+	background: rgba(239, 68, 68, 0.18);
+	border-color: transparent;
 	color: #fecaca;
 }
 .btn-danger:hover {
-	background: rgba(239, 68, 68, 0.25);
+	background: rgba(239, 68, 68, 0.3);
 }
 }
 

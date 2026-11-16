@@ -48,7 +48,8 @@ describe('parseCitations — entradas que não produzem citação', () => {
 		['~~~\nJoão 3:16\n~~~'],
 		['Coríntios 13:4'],
 		['João 99:1'],
-		['<!-- João 3:16 -->']
+		['<!-- João 3:16 -->'],
+		['[[tempo 15m alerta 2m]]']
 	])('%s', (text) => {
 		expect(parseCitations(text)).toEqual([]);
 	});

@@ -34,6 +34,7 @@ NEGATIVE = [
     "```\nJoão 3:16\n```",
     "Coríntios 13:4",
     "João 99:1",
+    "[[tempo 15m alerta 2m]]",
 ]
 
 

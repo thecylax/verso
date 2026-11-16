@@ -74,6 +74,49 @@ Testes locais: `.\.venv\Scripts\python -m pytest` em `apps/api` usa um SQLite te
 `verso.db`; `pnpm test` em `apps/web`. O Compose continua com Postgres; o mesmo código e as mesmas
 migrations servem aos dois bancos.
 
+## Marcações na nota
+
+Uma nota é Markdown. Duas marcações têm efeito além do texto: a citação de versículo e o tempo da apresentação.
+
+```markdown
+[[tempo 15m alerta 2m]]
+
+# A graça que basta
+
+O amor de Deus cabe num versículo: João 3:16.
+
+O salmo inteiro, numa versão escolhida: [[acf:sl:23]].
+```
+
+### Versículos
+
+A citação pode ser escrita como no texto:
+
+- `João 3:16` — um versículo
+- `João 3:16-18` — um intervalo
+- `Salmos 23` — o capítulo inteiro
+- `Jo 3.16` — abreviação; `:` e `.` separam capítulo e versículo
+
+A forma explícita fixa a versão: `[[versão:livro:capítulo]]` ou `[[versão:livro:capítulo:início-fim]]`. Exemplos: `[[nvi:jo:3:16]]`, `[[acf:sl:23:1-6]]`. A abreviação do livro é a do catálogo (`jo`, `sl`, `1co`).
+
+Na forma natural, a versão é a da conta. Na explícita, vale a versão escrita na marcação. Cerca de código, crase simples e comentário HTML não viram citação. `[[tempo ...]]` também não: é o cronômetro.
+
+Na visualização e na apresentação, a gaveta do tópico ativo lista as passagens citadas naquele trecho.
+
+### Cronômetro
+
+Sem marcação, o relógio da apresentação começa em `00:00` e conta para a frente. Com uma linha própria, fora de cerca de código, ele conta para trás:
+
+```markdown
+[[tempo 15m alerta 2m]]
+```
+
+`15m` é o alvo: o relógio abre em `15:00`. `alerta 2m` é o restante a partir do qual os dígitos ficam vermelhos e pulsam. Depois do zero a contagem continua, com sinal negativo (`-00:01`).
+
+A duração aceita `15m`, `15min`, `90s`, `1h30m` e `1h 30m`. O alvo precisa ser maior que zero. `[[tempo 15m]]` conta para trás sem mudar a cor. `alerta 0s` pinta o relógio ao chegar em `00:00`.
+
+A primeira linha válida vale. Ela some na visualização e na apresentação e continua na fonte. Uma linha inválida permanece visível. Toque ou clique no relógio pausa e retoma. Sair da apresentação zera o tempo.
+
 ## Versículos
 
 O servidor busca o texto bíblico num provedor compatível com a ABíbliaDigital e o grava na nota:

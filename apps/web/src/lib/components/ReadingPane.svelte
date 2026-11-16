@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import type { Passage } from '$lib/api';
 	import { pinchZoom, reading } from '$lib/fontSize.svelte';
+	import { stripTempo } from '$lib/tempo';
 	import { splitTopics } from '$lib/topics';
 	import MarkdownView from './MarkdownView.svelte';
 	import VerseDrawer from './VerseDrawer.svelte';
@@ -26,7 +27,8 @@
 	} = $props();
 
 	let drawerOffset = $state(0);
-	const topics = $derived(splitTopics(markdown));
+	const source = $derived(stripTempo(markdown));
+	const topics = $derived(splitTopics(source));
 	const activeMarkdown = $derived(topics[Math.min(active, topics.length - 1)]?.markdown ?? '');
 </script>
 
@@ -38,7 +40,7 @@
 		style="--reading-font-size: {reading.fontSize}px"
 	>
 		<div class="reading-pad mx-auto max-w-3xl px-5 pt-6">
-			<MarkdownView {markdown} root={scroller} onactive={(index) => (active = index)} />
+			<MarkdownView markdown={source} root={scroller} onactive={(index) => (active = index)} />
 		</div>
 	</div>
 

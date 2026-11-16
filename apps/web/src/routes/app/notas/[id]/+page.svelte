@@ -9,7 +9,9 @@
 	import ModeToggle from '$lib/components/ModeToggle.svelte';
 	import Presentation from '$lib/components/Presentation.svelte';
 	import ReadingPane from '$lib/components/ReadingPane.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import { session } from '$lib/session.svelte';
+	import { faArrowLeft, faPlay, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 
 	const SAVE_DELAY = 800;
 	const STATUS_TEXT = { idle: '', saving: 'Salvando…', saved: 'Salvo', error: 'Erro ao salvar' } as const;
@@ -160,7 +162,10 @@
 	<div class="flex h-dvh flex-col" style="padding-top: env(safe-area-inset-top)">
 		<header class="flex flex-col gap-2 border-b border-white/10 px-4 py-3 lg:flex-row lg:items-center">
 			<div class="flex items-center justify-between gap-2">
-				<a class="text-sm text-sky-300 hover:underline" href={backHref}>← Voltar</a>
+				<a class="inline-flex items-center gap-1.5 text-sm text-sky-300 hover:underline" href={backHref}>
+					<Icon icon={faArrowLeft} />
+					Voltar
+				</a>
 				<span class="text-sm text-slate-400 lg:hidden" aria-live="polite">{STATUS_TEXT[status]}</span>
 			</div>
 			<input
@@ -176,8 +181,12 @@
 					{STATUS_TEXT[status]}
 				</span>
 				<ModeToggle bind:mode />
-				<button class="btn btn-primary" type="button" onclick={present}>Apresentar</button>
-				<button class="btn btn-danger" type="button" onclick={remove}>Apagar</button>
+				<button class="btn btn-primary h-11 w-11 p-0 text-lg" type="button" onclick={present} aria-label="Apresentar" title="Apresentar">
+					<Icon icon={faPlay} />
+				</button>
+				<button class="btn btn-danger h-11 w-11 p-0 text-lg" type="button" onclick={remove} aria-label="Apagar" title="Apagar">
+					<Icon icon={faTrashCan} />
+				</button>
 			</div>
 		</header>
 

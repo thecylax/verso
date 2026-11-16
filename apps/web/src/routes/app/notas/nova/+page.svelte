@@ -7,7 +7,9 @@
 	import MarkdownEditor from '$lib/components/MarkdownEditor.svelte';
 	import ModeToggle from '$lib/components/ModeToggle.svelte';
 	import ReadingPane from '$lib/components/ReadingPane.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import { session } from '$lib/session.svelte';
+	import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 
 	const folderId = page.url.searchParams.get('pasta') || null;
 	const storageKey = `verso.draft:${folderId ?? 'root'}`;
@@ -57,7 +59,10 @@
 <div class="flex h-dvh flex-col" style="padding-top: env(safe-area-inset-top)">
 	<header class="flex flex-col gap-2 border-b border-white/10 px-4 py-3 lg:flex-row lg:items-center">
 		<div class="flex items-center justify-between gap-2">
-			<a class="text-sm text-sky-300 hover:underline" href={backHref}>← Voltar</a>
+			<a class="inline-flex items-center gap-1.5 text-sm text-sky-300 hover:underline" href={backHref}>
+				<Icon icon={faArrowLeft} />
+				Voltar
+			</a>
 			<span class="text-sm text-slate-400 lg:hidden">Rascunho</span>
 		</div>
 		<input

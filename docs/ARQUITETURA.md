@@ -402,7 +402,7 @@ Pastas primeiro, notas depois. Cartão de pasta mostra o nome. Cartão de nota m
 
 Colunas da grade: 1 abaixo de 640px, 2 de 640px a 1023px, 3 a partir de 1024px.
 
-"Nova pasta" pede o nome (prompt ou campo inline; um dos dois, sem biblioteca de modal extra) e faz `POST`. "Nova nota" navega para `/app/notas/nova?pasta=` com o id da pasta atual, ou sem query na raiz. O rascunho fica em `localStorage` na chave `verso.draft:{folderId}`, usando `root` na raiz. Fechar o navegador não apaga o rascunho. "Criar nota" faz o `POST`, apaga essa chave e substitui a URL por `/app/notas/{id}`.
+"Nova pasta", "Renomear" e "Apagar" abrem um modal próprio da aplicação, sem `prompt` nem `confirm`. O nome tem de 1 a 80 caracteres. Criar faz `POST`. Renomear faz `PATCH`. Apagar faz `DELETE` e, se a pasta não estiver vazia, o erro permanece no modal. No celular o painel fica na parte de cima da tela, para o campo continuar visível com o teclado aberto. "Nova nota" navega para `/app/notas/nova?pasta=` com o id da pasta atual, ou sem query na raiz. O rascunho fica em `localStorage` na chave `verso.draft:{folderId}`, usando `root` na raiz. Fechar o navegador não apaga o rascunho. "Criar nota" faz o `POST`, apaga essa chave e substitui a URL por `/app/notas/{id}`.
 
 Estado vazio: "Nada por aqui ainda." mais as duas ações de criar.
 
@@ -459,6 +459,16 @@ stateDiagram-v2
 Ao entrar: pedir Fullscreen no elemento raiz da apresentação. Se a promise rejeitar ou a API não existir, aplicar a classe de tela cheia simulada (`position: fixed; inset: 0; z-index: 40; height: 100dvh; padding` com `safe-area`). Ao sair: `exitFullscreen` se o documento ainda estiver em tela cheia, e remover a classe simulada.
 
 Cronômetro: ao entrar, acumulado 0 e relógio correndo. Pausar soma ao acumulado o trecho desde o último resume. Retomar grava um novo instante. Exibir com `requestAnimationFrame` ou intervalo de 250 ms. Abaixo de 1 hora, `mm:ss` com dois dígitos. A partir de 1 hora, `h:mm:ss`. Sair zera tudo.
+
+Diretiva de tempo, linha própria fora de cerca, com 0 a 3 espaços de indentação:
+
+```text
+[[tempo DURAÇÃO alerta DURAÇÃO]]
+```
+
+`alerta` e a segunda duração são opcionais. Duração: `(\d+h)?(\d+min|\d+m)?(\d+s)?`, com espaços permitidos entre as partes, e pelo menos um número. `parseTempo` devolve `{ targetMs, alertMs }` da primeira linha válida; `alertMs` é `null` quando o alerta não foi escrito. `stripTempo` tira todas as linhas válidas antes de `splitTopics` na leitura, para a diretiva não aparecer e não mudar o índice dos tópicos. Dentro de cerca, a linha fica.
+
+O valor exibido é `targetMs - elapsed`. Sem diretiva, é `elapsed`. Alerta quando `alertMs` não é nulo e o valor exibido é menor ou igual a `alertMs`, inclusive depois do zero. O texto usa `formatClock`: `Math.trunc(ms / 1000)`, com prefixo `-` se o segundo for negativo. Os dígitos em alerta usam vermelho (`text-red-400`) e uma pulsação de opacidade de 1,8 s entre 1 e 0,45, só enquanto o relógio corre e `prefers-reduced-motion` não pede redução.
 
 Botões de tópico: próximo incrementa o índice e chama `scrollIntoView({ block: "start" })` na section. Anterior decrementa. Limites deixam o botão `disabled`. O índice ativo da apresentação também muda se a pessoa rolar, pela mesma regra do observer. O próximo comando de botão usa o índice já atualizado pela rolagem.
 
@@ -623,7 +633,7 @@ Forma explícita:
 \[\[([a-z0-9]{2,20}):([a-z0-9]{1,8}):(\d{1,3})(?::(\d{1,3})(?:-(\d{1,3}))?)?\]\]
 ```
 
-Exemplos válidos: `[[acf:sl:23:1-6]]`, `[[nvi:jo:3:16]]`, `[[nvi:sl:23]]`. Abreviação tem de existir no catálogo. Capítulo dentro de 1..`chapters`. Versículo, se houver, é no mínimo 1. Capítulo inteiro quando o quarto grupo não existe (`start` e `end` nulos).
+Exemplos válidos: `[[acf:sl:23:1-6]]`, `[[nvi:jo:3:16]]`, `[[nvi:sl:23]]`. `[[tempo 15m alerta 2m]]` não é citação: é a diretiva de cronômetro da apresentação. Abreviação tem de existir no catálogo. Capítulo dentro de 1..`chapters`. Versículo, se houver, é no mínimo 1. Capítulo inteiro quando o quarto grupo não existe (`start` e `end` nulos).
 
 3. Forma natural, sobre o texto já mascarado e em minúsculas. Construir uma alternância com todos os aliases, do mais longo para o mais curto, cada um escapado como literal. Entre aliases de mesmo tamanho, não importa a ordem, exceto que o par `jó` e `jo` funciona nos dois sentidos porque a olhada à frente exige que o alias termine onde acaba o token.
 
