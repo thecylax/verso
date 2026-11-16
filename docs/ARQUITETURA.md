@@ -107,6 +107,7 @@ Identificadores UUID v4. Instantes `timestamptz` em UTC. Nomes de tabela no plur
 | `email` | varchar(254) | único, guardado em minúsculas |
 | `password_hash` | text | Argon2id |
 | `bible_version` | varchar(20) | padrão `nvi`, casa com `^[a-z0-9]{2,20}$` |
+| `can_invite` | boolean | quem pode gerar convite; a primeira conta do banco nasce com `true`, as demais com `false` |
 | `created_at` | timestamptz | default now |
 
 ### `sessions`
@@ -118,6 +119,19 @@ Identificadores UUID v4. Instantes `timestamptz` em UTC. Nomes de tabela no plur
 | `token_hash` | char(64) | único, SHA-256 hex do valor do cookie |
 | `expires_at` | timestamptz | criação + 30 dias |
 | `created_at` | timestamptz | default now |
+
+### `invites`
+
+| Coluna | Tipo | Regra |
+| --- | --- | --- |
+| `id` | uuid | pk |
+| `token_hash` | char(64) | único, SHA-256 hex do token do link |
+| `created_by` | uuid | fk `users.id` on delete cascade, indexado |
+| `expires_at` | timestamptz | criação + 48 horas |
+| `used_at` | timestamptz nulo | preenchido quando o cadastro consome o convite |
+| `created_at` | timestamptz | default now |
+
+O token cru só aparece na resposta de quem gerou o link. Convite usado ou vencido não cadastra.
 
 ### `folders`
 
@@ -175,6 +189,7 @@ Prefixo `/api`. Corpo JSON. Erro único:
 | HTTP | `code` | Quando |
 | --- | --- | --- |
 | 401 | `unauthorized` | sem sessão, ou senha/e-mail de entrada inválidos |
+| 403 | `forbidden` | cadastro sem convite, convite inválido, usado ou vencido, ou geração sem permissão |
 | 404 | `not_found` | id ausente ou de outra pessoa |
 | 409 | `conflict` | e-mail já cadastrado, ou pasta não vazia, ou nome de pasta repetido entre irmãos |
 | 422 | `validation_error` | corpo inválido; `message` em português, o primeiro problema |
@@ -201,19 +216,33 @@ Se o e-mail do login não existir, ainda assim rode a verificação Argon2 contr
 
 Sem sessão. `200` e `{ "status": "ok" }`.
 
+### `POST /api/auth/invites`
+
+Exige sessão e `can_invite`. `201`:
+
+```json
+{ "token": "token-cru", "expires_at": "2026-11-18T19:00:00Z" }
+```
+
+O front monta `{origem}/cadastro?convite={token}`. Sem permissão: `403` e "Você não pode gerar convites."
+
+### `GET /api/auth/invites/{token}`
+
+Sem sessão. Confere se o convite existe, não foi usado e não venceu. `200` com `{ "expires_at": "..." }`. Inválido ou usado: `403` e "Convite inválido ou já utilizado." Vencido: `403` e "Este convite expirou."
+
 ### `POST /api/auth/register`
 
 ```json
-{ "name": "Ana", "email": "ana@igreja.org", "password": "uma-senha" }
+{ "name": "Ana", "email": "ana@igreja.org", "password": "uma-senha", "invite": "token-cru" }
 ```
 
 `201`:
 
 ```json
-{ "id": "uuid", "name": "Ana", "email": "ana@igreja.org", "bible_version": "nvi" }
+{ "id": "uuid", "name": "Ana", "email": "ana@igreja.org", "bible_version": "nvi", "can_invite": false }
 ```
 
-Define o cookie. E-mail é trimado e posto em minúsculas. Nome trimado, 1 a 80 caracteres. Senha com 8 a 128 caracteres.
+Define o cookie. E-mail é trimado e posto em minúsculas. Nome trimado, 1 a 80 caracteres. Senha com 8 a 128 caracteres. Com alguma conta já existente, `invite` é obrigatório e o convite é consumido no mesmo commit da sessão. Sem ele: `403` e "Cadastro só é possível com um convite." E-mail repetido responde `409` e não consome o convite. Banco vazio é a exceção de instalação: o primeiro `POST` sem convite cria a conta com `can_invite: true`. Conta nascida de convite fica com `can_invite: false`.
 
 ### `POST /api/auth/login`
 
@@ -382,7 +411,8 @@ Rotas SvelteKit:
 
 | Rota | Tela |
 | --- | --- |
-| `/` | Entrar e criar conta |
+| `/` | Entrar |
+| `/cadastro` | Criar conta com `?convite=` |
 | `/app` | Grade da raiz |
 | `/app/pastas/[id]` | Grade da pasta |
 | `/app/notas/nova` | Rascunho local até “Criar nota” |
@@ -392,11 +422,13 @@ Layout de `/app` exige `GET /api/auth/me`. `401` manda para `/`. Pessoa já aute
 
 ### Tela de entrada
 
-Cartão central com o tratamento de vidro. Estado "entrar": e-mail, senha, botão "Entrar", ação textual "Criar conta". Estado "criar": nome, e-mail, senha, botão "Criar conta", ação textual "Já tenho conta". Erro inline, vindo de `error.message`.
+Cartão central com o tratamento de vidro. E-mail, senha e botão "Entrar". O texto avisa que conta nova só entra por convite. Erro inline, vindo de `error.message`.
+
+`/cadastro?convite=` consulta o convite antes de mostrar o formulário. Válido: nome, e-mail, senha e "Criar conta", depois a grade. Inválido: a mensagem do `403` e o link "Já tenho conta". Pessoa já autenticada em `/` ou `/cadastro` vai para `/app`.
 
 ### Grade
 
-Trilha de ancestrais no topo; na raiz, só o rótulo "Verso". Ações "Nova pasta", "Nova nota" e "Sair". Seletor "Versão bíblica" com os slugs fixos `nvi`, `acf`, `aa`, `ntlh`, `nvt` e `kjv`. A mudança grava `PATCH /api/auth/me` e vale para a próxima criação. Não há chamada ao provedor.
+Trilha de ancestrais no topo; na raiz, só o rótulo "Verso". Ações "Nova pasta", "Nova nota" e "Sair". Quem tem `can_invite` também vê "Convidar", que abre um modal com o link copiável. Seletor "Versão bíblica" com os slugs fixos `nvi`, `acf`, `aa`, `ntlh`, `nvt` e `kjv`. A mudança grava `PATCH /api/auth/me` e vale para a próxima criação. Não há chamada ao provedor.
 
 Pastas primeiro, notas depois. Cartão de pasta mostra o nome. Cartão de nota mostra o título e `created_at` com `Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })`.
 

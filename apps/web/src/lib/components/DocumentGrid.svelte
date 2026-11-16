@@ -13,8 +13,9 @@
 	} from '$lib/api';
 	import FolderDialog from '$lib/components/FolderDialog.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import InviteDialog from '$lib/components/InviteDialog.svelte';
 	import { session } from '$lib/session.svelte';
-	import { faFileLines, faFolder, faPen, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+	import { faFileLines, faFolder, faPen, faTrashCan, faUserPlus } from '@fortawesome/free-solid-svg-icons';
 
 	let { folderId }: { folderId: string | null } = $props();
 
@@ -29,6 +30,7 @@
 	>(null);
 	let dialogBusy = $state(false);
 	let dialogError = $state('');
+	let inviteOpen = $state(false);
 
 	const newNoteHref = $derived(folderId ? `/app/notas/nova?pasta=${folderId}` : '/app/notas/nova');
 	const isEmpty = $derived(!loading && folders.length === 0 && documents.length === 0);
@@ -143,6 +145,12 @@
 					{/each}
 				</select>
 			</label>
+			{#if session.user?.can_invite}
+				<button class="btn" type="button" onclick={() => (inviteOpen = true)}>
+					<Icon icon={faUserPlus} />
+					Convidar
+				</button>
+			{/if}
 			<button class="btn" type="button" onclick={logout}>Sair</button>
 		</div>
 	</header>
@@ -205,6 +213,10 @@
 	{/if}
 	</div>
 </div>
+
+{#if inviteOpen}
+	<InviteDialog onclose={() => (inviteOpen = false)} />
+{/if}
 
 {#if dialog}
 	<FolderDialog

@@ -10,6 +10,7 @@ from app.config import settings
 
 SESSION_COOKIE = "session"
 SESSION_TTL = timedelta(days=30)
+INVITE_TTL = timedelta(hours=48)
 
 _hasher = PasswordHasher()
 

@@ -1,10 +1,10 @@
-from tests.conftest import register
+from tests.conftest import issue_invite, register
 
 
 def setup_two_people(make_client):
     ana, bia = make_client(), make_client()
     register(ana, email="ana@igreja.org")
-    register(bia, email="bia@igreja.org", name="Bia")
+    register(bia, email="bia@igreja.org", name="Bia", invite=issue_invite(ana))
     folder = ana.post("/api/folders", json={"name": "Células"}).json()
     note = ana.post("/api/documents", json={"folder_id": folder["id"], "content_md": "# Graça"}).json()
     root_note = ana.post("/api/documents", json={"content_md": "# Raiz"}).json()

@@ -4,8 +4,6 @@
 	import { api, ApiError, type User } from '$lib/api';
 	import { session } from '$lib/session.svelte';
 
-	let mode = $state<'login' | 'register'>('login');
-	let name = $state('');
 	let email = $state('');
 	let password = $state('');
 	let error = $state('');
@@ -21,24 +19,12 @@
 		}
 	});
 
-	function switchMode(next: 'login' | 'register') {
-		mode = next;
-		error = '';
-	}
-
 	async function submit(event: SubmitEvent) {
 		event.preventDefault();
 		error = '';
-		if (mode === 'register' && password.length < 8) {
-			error = 'A senha precisa ter pelo menos 8 caracteres.';
-			return;
-		}
 		busy = true;
 		try {
-			session.user =
-				mode === 'login'
-					? await api<User>('/auth/login', 'POST', { email, password })
-					: await api<User>('/auth/register', 'POST', { name, email, password });
+			session.user = await api<User>('/auth/login', 'POST', { email, password });
 			await goto('/app');
 		} catch (err) {
 			error = err instanceof ApiError ? err.message : 'Algo deu errado. Tente de novo.';
@@ -52,30 +38,16 @@
 	{#if !checking}
 		<div class="glass w-full max-w-sm rounded-2xl p-6 text-slate-100 sm:p-8">
 			<h1 class="mb-1 text-3xl font-bold tracking-tight">Verso</h1>
-			<p class="mb-6 text-sm text-slate-300">
-				{mode === 'login' ? 'Entre para ver suas notas.' : 'Crie sua conta para começar.'}
-			</p>
+			<p class="mb-6 text-sm text-slate-300">Entre para ver suas notas. Conta nova só entra por um link de convite.</p>
 
 			<form class="flex flex-col gap-4" onsubmit={submit} novalidate>
-				{#if mode === 'register'}
-					<label class="flex flex-col gap-1 text-sm">
-						Nome
-						<input class="field" type="text" autocomplete="name" bind:value={name} required maxlength="80" />
-					</label>
-				{/if}
 				<label class="flex flex-col gap-1 text-sm">
 					E-mail
 					<input class="field" type="email" autocomplete="email" bind:value={email} required />
 				</label>
 				<label class="flex flex-col gap-1 text-sm">
 					Senha
-					<input
-						class="field"
-						type="password"
-						autocomplete={mode === 'login' ? 'current-password' : 'new-password'}
-						bind:value={password}
-						required
-					/>
+					<input class="field" type="password" autocomplete="current-password" bind:value={password} required />
 				</label>
 
 				{#if error}
@@ -87,21 +59,9 @@
 					type="submit"
 					disabled={busy}
 				>
-					{mode === 'login' ? 'Entrar' : 'Criar conta'}
+					Entrar
 				</button>
 			</form>
-
-			<p class="mt-5 text-center text-sm">
-				{#if mode === 'login'}
-					<button class="text-sky-300 underline-offset-2 hover:underline" type="button" onclick={() => switchMode('register')}>
-						Criar conta
-					</button>
-				{:else}
-					<button class="text-sky-300 underline-offset-2 hover:underline" type="button" onclick={() => switchMode('login')}>
-						Já tenho conta
-					</button>
-				{/if}
-			</p>
 		</div>
 	{/if}
 </main>

@@ -14,6 +14,7 @@ def user_out(user: User) -> dict:
         "name": user.name,
         "email": user.email,
         "bible_version": user.bible_version,
+        "can_invite": user.can_invite,
     }
 
 

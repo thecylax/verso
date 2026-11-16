@@ -3,7 +3,7 @@ import pytest
 
 from app.main import app
 from app.services.bible import BibleClient, BibleError, get_bible_client, slice_verses
-from tests.conftest import register
+from tests.conftest import issue_invite, register
 
 
 class FakeBible:
@@ -171,7 +171,7 @@ def test_refresh_is_isolated_per_user(person, use_bible, make_client):
     use_bible(FakeBible())
     note = create(person, "Sl 23:1")
     other = make_client()
-    register(other, email="outra@igreja.org")
+    register(other, email="outra@igreja.org", invite=issue_invite(person))
     assert other.post(f"/api/documents/{note['id']}/passages/refresh").status_code == 404
 
 

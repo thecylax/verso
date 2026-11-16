@@ -35,7 +35,7 @@ Há mais de uma pessoa usando o sistema. Cada pessoa vê somente as próprias pa
 
 ## Fluxo principal
 
-1. A pessoa abre a aplicação e entra, ou cria uma conta na mesma tela.
+1. A pessoa abre a aplicação e entra. Conta nova só nasce por um link de convite, gerado por quem tem permissão.
 2. Cai na grade da pasta raiz: pastas e notas. Cada nota mostra título e data de criação.
 3. Entra numa pasta, ou abre uma nota.
 4. “Nova nota” abre um rascunho na pasta atual. A pessoa escreve o Markdown e confirma em “Criar nota”. Nesse instante o servidor grava a nota e embute o texto dos versículos citados.
@@ -58,9 +58,9 @@ Cada requisito inclui o critério de aceite. Os nomes de campo e de rota estão 
 
 ### RF-001 — Criar conta
 
-A tela de entrada oferece “Criar conta” no mesmo cartão do login. Os campos são nome, e-mail e senha. Senha com no mínimo 8 caracteres. E-mail é único, sem diferenciar maiúsculas. Conta criada já entra na aplicação.
+Não há cadastro aberto na tela de entrada. Quem pode convidar gera um link temporário, válido por 48 horas e de uso único. A pessoa abre esse link, informa nome, e-mail e senha, e a conta já entra na aplicação. Senha com no mínimo 8 caracteres. E-mail é único, sem diferenciar maiúsculas. A conta criada não pode gerar convites.
 
-Aceite: e-mail repetido permanece na tela e explica que a conta já existe. Senha curta não é enviada como sucesso.
+Aceite: sem convite válido a tela explica que o cadastro exige convite, que o convite é inválido ou que expirou. E-mail repetido permanece na tela e explica que a conta já existe, sem gastar o convite. Senha curta não é enviada como sucesso. Quem não tem permissão não vê a ação de convidar.
 
 ### RF-002 — Entrar
 

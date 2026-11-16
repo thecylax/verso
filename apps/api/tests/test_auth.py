@@ -1,4 +1,9 @@
-from tests.conftest import PASSWORD, register
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import select
+
+from app.models import Invite
+from tests.conftest import PASSWORD, issue_invite, register
 
 INVALID_LOGIN = "E-mail ou senha incorretos."
 
@@ -9,6 +14,7 @@ def test_register_sets_http_only_cookie_and_returns_person(client):
     body = response.json()
     assert body["email"] == "ana@igreja.org"
     assert body["bible_version"] == "nvi"
+    assert body["can_invite"] is True
     cookie = response.headers["set-cookie"]
     assert cookie.startswith("session=")
     assert "HttpOnly" in cookie
@@ -30,10 +36,14 @@ def test_short_password_is_rejected(client):
 
 def test_duplicate_email_ignores_case(client, make_client):
     assert register(client).status_code == 201
-    response = register(make_client(), email="ANA@igreja.org")
+    token = issue_invite(client)
+    response = register(make_client(), email="ANA@igreja.org", invite=token)
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "conflict"
     assert "conta" in response.json()["error"]["message"]
+    created = register(make_client(), email="bia@igreja.org", name="Bia", invite=token)
+    assert created.status_code == 201
+    assert created.json()["can_invite"] is False
 
 
 def test_invalid_login_has_a_single_message(client, make_client):
@@ -66,10 +76,70 @@ def test_logout_ends_session(client):
 
 
 def test_requests_without_session_are_unauthorized(client):
-    for method, path in [("get", "/api/auth/me"), ("get", "/api/folders"), ("get", "/api/documents"), ("post", "/api/auth/logout")]:
+    for method, path in [
+        ("get", "/api/auth/me"),
+        ("get", "/api/folders"),
+        ("get", "/api/documents"),
+        ("post", "/api/auth/logout"),
+        ("post", "/api/auth/invites"),
+    ]:
         response = getattr(client, method)(path)
         assert response.status_code == 401
         assert response.json()["error"]["code"] == "unauthorized"
+
+
+def test_register_without_invite_is_forbidden_after_the_first_account(client, make_client):
+    register(client)
+    response = register(make_client(), email="bia@igreja.org", name="Bia")
+    assert response.status_code == 403
+    assert response.json()["error"] == {
+        "code": "forbidden",
+        "message": "Cadastro só é possível com um convite.",
+    }
+
+
+def test_invite_is_single_use(client, make_client):
+    register(client)
+    token = issue_invite(client)
+    assert register(make_client(), email="bia@igreja.org", name="Bia", invite=token).status_code == 201
+    again = register(make_client(), email="caio@igreja.org", name="Caio", invite=token)
+    assert again.status_code == 403
+    assert again.json()["error"]["message"] == "Convite inválido ou já utilizado."
+
+
+def test_expired_invite_is_rejected(client, make_client, session_factory):
+    register(client)
+    token = issue_invite(client)
+    db = session_factory()
+    try:
+        invite = db.scalar(select(Invite))
+        assert invite is not None
+        invite.expires_at = datetime.now(timezone.utc) - timedelta(seconds=1)
+        db.commit()
+    finally:
+        db.close()
+    response = register(make_client(), email="bia@igreja.org", name="Bia", invite=token)
+    assert response.status_code == 403
+    assert response.json()["error"]["message"] == "Este convite expirou."
+
+
+def test_invited_user_cannot_create_invites(client, make_client):
+    register(client)
+    other = make_client()
+    assert register(other, email="bia@igreja.org", name="Bia", invite=issue_invite(client)).status_code == 201
+    response = other.post("/api/auth/invites")
+    assert response.status_code == 403
+    assert response.json()["error"]["message"] == "Você não pode gerar convites."
+
+
+def test_unknown_invite_is_rejected(client, make_client):
+    register(client)
+    preview = client.get("/api/auth/invites/nao-existe")
+    assert preview.status_code == 403
+    assert preview.json()["error"]["message"] == "Convite inválido ou já utilizado."
+    response = register(make_client(), email="bia@igreja.org", name="Bia", invite="nao-existe")
+    assert response.status_code == 403
+    assert response.json()["error"]["message"] == "Convite inválido ou já utilizado."
 
 
 def test_update_bible_version(client):

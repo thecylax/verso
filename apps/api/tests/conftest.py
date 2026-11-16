@@ -86,5 +86,20 @@ def client(make_client: Callable[[], TestClient]) -> TestClient:
     return make_client()
 
 
-def register(client: TestClient, email: str = "ana@igreja.org", name: str = "Ana", password: str = PASSWORD):
-    return client.post("/api/auth/register", json={"name": name, "email": email, "password": password})
+def register(
+    client: TestClient,
+    email: str = "ana@igreja.org",
+    name: str = "Ana",
+    password: str = PASSWORD,
+    invite: str | None = None,
+):
+    body: dict[str, str] = {"name": name, "email": email, "password": password}
+    if invite:
+        body["invite"] = invite
+    return client.post("/api/auth/register", json=body)
+
+
+def issue_invite(client: TestClient) -> str:
+    response = client.post("/api/auth/invites")
+    assert response.status_code == 201, response.text
+    return response.json()["token"]

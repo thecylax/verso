@@ -3,6 +3,7 @@ export type User = {
 	name: string;
 	email: string;
 	bible_version: string;
+	can_invite: boolean;
 };
 
 export type Folder = {

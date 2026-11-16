@@ -39,6 +39,10 @@ def conflict(message: str) -> ApiError:
     return ApiError(409, "conflict", message)
 
 
+def forbidden(message: str) -> ApiError:
+    return ApiError(403, "forbidden", message)
+
+
 def validation_error(message: str) -> ApiError:
     return ApiError(422, "validation_error", message)
 
