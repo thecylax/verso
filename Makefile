@@ -20,7 +20,7 @@ RESET_DB := rm -f verso.db verso.db-shm verso.db-wal
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: help install install-api install-web check-node migrate dev api web test test-api test-web reset-db
+.PHONY: help install install-api install-web check-node check-corepack migrate dev api web test test-api test-web reset-db
 
 help:
 	@echo "make install    cria a venv da API e instala as dependencias do front"
@@ -37,12 +37,19 @@ install-api:
 	cd $(API_DIR); $(MAKE_VENV)
 	cd $(API_DIR); $(VENV_BIN)/python -m pip install -e ".[dev]"
 
-install-web: check-node
+install-web: check-node check-corepack
 	cd $(WEB_DIR); corepack enable
 	cd $(WEB_DIR); pnpm install
 
 check-node:
 	node $(WEB_DIR)/scripts/check-node.mjs
+
+check-corepack:
+ifeq ($(OS),Windows_NT)
+	@powershell -NoProfile -ExecutionPolicy Bypass -Command "if (-not (Get-Command corepack -ErrorAction SilentlyContinue)) { Write-Error 'corepack nao encontrado. Instale o Node.js mais recente ou habilite o Corepack antes de continuar.'; exit 1 }"
+else
+	@if ! command -v corepack >/dev/null 2>&1; then echo 'Erro: corepack nao encontrado. Instale o Node.js mais recente (que inclui o Corepack) antes de continuar.' >&2; exit 1; fi
+endif
 
 migrate:
 	cd $(API_DIR); $(VENV_BIN)/alembic upgrade head
@@ -50,7 +57,7 @@ migrate:
 api: migrate
 	cd $(API_DIR); $(VENV_BIN)/uvicorn app.main:app --reload --port 8000
 
-web: check-node
+web: check-node check-corepack
 	cd $(WEB_DIR); pnpm dev
 
 dev:
@@ -61,7 +68,7 @@ test: test-api test-web
 test-api:
 	cd $(API_DIR); $(VENV_BIN)/python -m pytest -q
 
-test-web: check-node
+test-web: check-node check-corepack
 	cd $(WEB_DIR); pnpm test
 
 reset-db:

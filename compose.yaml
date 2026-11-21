@@ -33,7 +33,9 @@ services:
         condition: service_healthy
 
   web:
-    build: ./apps/web
+    build:
+      context: ./apps/web
+      target: development
     environment:
       API_PROXY_TARGET: http://api:8000
       CHOKIDAR_USEPOLLING: "true"
