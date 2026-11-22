@@ -19,14 +19,16 @@ Para mudanças sem informação suficiente, solicite de forma breve qual das tr�
 ### Como aplicar uma versão
 
 1. O número deve ser único para todo o produto Verso.
-2. Atualize juntos:
-   - `apps/api/pyproject.toml`, campo `version`;
-   - `apps/web/package.json`, campo `version`.
-3. Não altere dependências ou o manifesto PWA apenas para forçar uma versão.
-4. Execute testes relevantes e confirme o build antes de gerar a tag.
-5. Para releases estáveis, crie tag Git com prefixo `v`, por exemplo `v1.2.3`.
-6. Antes de criar uma tag, garanta que o diretório esteja sem mudanças não relacionadas pendentes e que o branch esteja preparado pelo usuário.
-7. Nunca publique credenciais, senhas, URLs privadas ou dados reais de implantação em arquivos versionados.
+2. Versione a API e o frontend separadamente, conforme a aplicação alterada.
+3. Atualize apenas o manifesto correspondente:
+   - API: `apps/api/pyproject.toml`, campo `version`;
+   - frontend: `apps/web/package.json`, campo `version`.
+   - Se ambas forem alteradas, atualize os dois para os números correspondentes a cada aplicação.
+4. Não altere dependências ou o manifesto PWA apenas para forçar uma versão.
+5. Execute testes relevantes e confirme o build antes de gerar a tag.
+6. Para releases estáveis, crie tag Git com prefixo `v`, por exemplo `v1.2.3`.
+7. Antes de criar uma tag, garanta que o diretório esteja sem mudanças não relacionadas pendentes e que o branch esteja preparado pelo usuário.
+8. Nunca publique credenciais, senhas, URLs privadas ou dados reais de implantação em arquivos versionados.
 
 ### Pré-releases
 
@@ -34,4 +36,4 @@ Use somente quando solicitado: `vMAJOR.MINOR.PATCH-alpha.1`, `-beta.1` ou `-rc.1
 
 ### Commits e Docker
 
-O workflow produz imagens Docker separadas `verso-api` e `verso-web` a partir da mesma tag SemVer. Não crie uma nova versão somente por mudar arquivos de infraestrutura; use PATCH se o produto publicado e o comportamento externo não mudarem, ou MAJOR/MINOR se a implantação introduzir mudança incompatível ou funcional.
+O workflow produz imagens Docker separadas `verso-api` e `verso-web`. Uma tag Git publica apenas as imagens cujos manifests tiverem a mesma versão da tag. Não crie uma nova versão somente por mudar arquivos de infraestrutura; use PATCH se o produto publicado e o comportamento externo não mudarem, ou MAJOR/MINOR se a implantação introduzir mudança incompatível ou funcional.

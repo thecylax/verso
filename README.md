@@ -199,3 +199,7 @@ Verso usa [Semantic Versioning](https://semver.org/) no formato `MAJOR.MINOR.PAT
 A versão do produto deve ser atualizada em conjunto em `apps/api/pyproject.toml` e `apps/web/package.json`. Antes de publicar uma versão, execute os testes, confira os builds Docker e crie a tag Git correspondente.
 
 Exemplos: corrigir o cálculo do cronômetro é um `PATCH`; adicionar um novo tipo de convite opcional é um `MINOR`; mudar um formato persistido sem compatibilidade é um `MAJOR`.
+
+A API e o frontend são versionados separadamente: atualize `apps/api/pyproject.toml` apenas para mudanças da API e `apps/web/package.json` apenas para mudanças do frontend. Ambos podem ter números SemVer diferentes no mesmo repositório.
+
+Uma tag Git `vX.Y.Z` publica apenas a aplicação cujo manifesto tiver exatamente `X.Y.Z`. Antes de publicar, execute os testes, confira os builds Docker e crie a tag correspondente à aplicação alterada.
