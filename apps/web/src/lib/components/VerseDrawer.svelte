@@ -100,7 +100,7 @@
 </script>
 
 <div
-	class="glass fixed bottom-0 left-1/2 z-50 w-full max-w-3xl -translate-x-1/2 rounded-t-2xl text-slate-100"
+	class="fixed bottom-0 left-1/2 z-50 w-full max-w-3xl -translate-x-1/2 rounded-t-2xl border-t border-x border-slate-600 bg-slate-900 shadow-2xl text-slate-100"
 	style="padding-bottom: env(safe-area-inset-bottom)"
 	bind:offsetHeight={offset}
 >
