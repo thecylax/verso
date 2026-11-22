@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     cookie_secure: bool = False
     bible_api_base_url: str = "https://abibliadigital.api.br/api"
     bible_api_token: str = ""
+    bootstrap_secret: str = ""
 
 
 settings = Settings()

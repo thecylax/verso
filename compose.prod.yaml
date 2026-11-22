@@ -2,12 +2,12 @@ name: verso-production
 
 networks:
   portainer_default:
-  traefik:
     external: true
 
 services:
   api:
     image: ghcr.io/thecylax/verso-api:latest
+    container_name: verso_api
     env_file:
       - .env
     restart: unless-stopped
@@ -21,9 +21,16 @@ services:
       timeout: 5s
       retries: 10
       start_period: 20s
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Configure DATABASE_URL in the production .env file}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      BIBLE_API_BASE_URL: ${BIBLE_API_BASE_URL:-https://abibliadigital.api.br/api}
+      BIBLE_API_TOKEN: ${BIBLE_API_TOKEN:-}
+      BOOTSTRAP_SECRET: ${BOOTSTRAP_SECRET:-}
 
-  web:
+  verso_web:
     image: ghcr.io/thecylax/verso-web:latest
+    container_name: verso_web
     restart: unless-stopped
     expose:
       - "80"
@@ -34,14 +41,12 @@ services:
         condition: service_healthy
     labels:
       - traefik.enable=true
+      - traefik.docker.network=portainer_default
 
       - traefik.http.routers.verso.rule=Host(`${VERSO_DOMAIN:-verso.blacktomato.vps-kinghost.net}`)
       - traefik.http.routers.verso.entrypoints=${TRAEFIK_WEBSECURE_ENTRYPOINT:-websecure}
       - traefik.http.routers.verso.tls=true
-      - traefik.http.routers.verso.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      - traefik.http.routers.verso.tls.certresolver=${TRAEFIK_CERTRESOLVER:-leresolver}
+      - traefik.http.routers.verso.service=verso
       - traefik.http.services.verso.loadbalancer.server.port=80
-
-      - traefik.http.routers.verso-http.rule=Host(`${VERSO_DOMAIN:-verso.blacktomato.vps-kinghost.net}`)
-      - traefik.http.routers.verso-http.entrypoints=${TRAEFIK_WEB_ENTRYPOINT:-web}
-      - traefik.http.routers.verso-http.middlewares=verso-redirect
-      - traefik.http.middlewares.verso-redirect.redirectscheme.scheme=https
+      - traefik.http.routers.verso.tls.domains[0].main=${VERSO_DOMAIN:-verso.blacktomato.vps-kinghost.net}

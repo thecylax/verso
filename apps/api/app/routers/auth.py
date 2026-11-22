@@ -1,16 +1,18 @@
+import hmac
 import re
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Header, Response
 from pydantic import BaseModel, field_validator
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.db import get_db
 from app.deps import get_current_session, get_current_user
 from app.errors import conflict, forbidden, unauthorized
-from app.models import Invite, User, UserSession
+from app.models import BootstrapState, Invite, User, UserSession
 from app.security import (
     DUMMY_PASSWORD_HASH,
     INVITE_TTL,
@@ -138,19 +140,39 @@ def read_invite(token: str, db: Session = Depends(get_db)) -> dict:
 
 
 @router.post("/register", status_code=201)
-def register(body: RegisterIn, response: Response, db: Session = Depends(get_db)) -> dict:
+def register(
+    body: RegisterIn,
+    response: Response,
+    x_bootstrap_secret: str | None = Header(default=None, alias="X-Bootstrap-Secret"),
+    db: Session = Depends(get_db),
+) -> dict:
     first_account = db.scalar(select(func.count()).select_from(User)) == 0
+    state = db.get(BootstrapState, 1)
+    bootstrap_consumed = state is not None and state.consumed
     invite = None
+
     if first_account:
+        if bootstrap_consumed:
+            raise forbidden(NEED_INVITE)
+        if not settings.bootstrap_secret:
+            raise forbidden("O cadastro inicial não está configurado.")
+        if not x_bootstrap_secret or not hmac.compare_digest(x_bootstrap_secret, settings.bootstrap_secret):
+            raise forbidden("Segredo de cadastro inicial inválido.")
         can_invite = True
     else:
+        if bootstrap_consumed is False:
+            if state is None:
+                state = BootstrapState(id=1, consumed=False)
+                db.add(state)
         if not body.invite:
             raise forbidden(NEED_INVITE)
         invite = usable_invite(db, body.invite)
         can_invite = False
+
     if db.scalar(select(User.id).where(User.email == body.email)):
         db.rollback()
         raise conflict(EMAIL_TAKEN)
+
     user = User(
         name=body.name,
         email=body.email,
@@ -163,8 +185,16 @@ def register(body: RegisterIn, response: Response, db: Session = Depends(get_db)
     except IntegrityError:
         db.rollback()
         raise conflict(EMAIL_TAKEN)
+
+    if first_account:
+        if state is None:
+            db.add(BootstrapState(id=1, consumed=True))
+        else:
+            state.consumed = True
+
     if invite is not None:
         invite.used_at = datetime.now(timezone.utc)
+
     start_session(db, user, response)
     return user_out(user)
 

@@ -148,3 +148,20 @@ def test_update_bible_version(client):
     assert response.status_code == 200
     assert response.json()["bible_version"] == "acf"
     assert client.patch("/api/auth/me", json={"bible_version": "ACF!"}).status_code == 422
+
+
+def test_bootstrap_registration_requires_secret_and_is_single_use(client, make_client):
+    without_secret = make_client().post(
+        "/api/auth/register",
+        json={"name": "Intruso", "email": "intruso@igreja.org", "password": PASSWORD},
+    )
+    assert without_secret.status_code == 403
+
+    assert register(client).status_code == 201
+
+    second_without_invite = make_client().post(
+        "/api/auth/register",
+        json={"name": "Outro", "email": "outro@igreja.org", "password": PASSWORD},
+    )
+    assert second_without_invite.status_code == 403
+    assert second_without_invite.json()["error"]["message"] == "Cadastro só é possível com um convite."

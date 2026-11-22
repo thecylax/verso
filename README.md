@@ -29,6 +29,29 @@ Se o `package.json` do front mudar, recrie o volume de `node_modules`:
 docker compose up --build -V web
 ```
 
+## Criar a primeira conta
+
+O primeiro cadastro é protegido por `BOOTSTRAP_SECRET` e só pode ser realizado uma vez.
+Configure um segredo aleatório forte no ambiente antes de iniciar a API e envie-o uma única vez no header `X-Bootstrap-Secret`.
+Não envie o campo `invite` nessa primeira criação.
+
+Em produção, substitua `<DOMINIO>` e `<BOOTSTRAP_SECRET>` pelos valores do servidor:
+
+```sh
+curl -i -X POST "https://<DOMINIO>/api/auth/register" \
+  -H "Content-Type: application/json" \
+  -H "X-Bootstrap-Secret: <BOOTSTRAP_SECRET>" \
+  -d '{"name":"Administrador","email":"admin@exemplo.com","password":"SENHA_FORTE"}'
+```
+
+Uma resposta `201 Created` confirma a criação e consome o bootstrap definitivamente. Depois, entre em Verso e use o recurso de convites para cadastrar novas contas.
+
+Para contas seguintes, o cadastro pela interface exige o convite gerado pelo primeiro usuário:
+
+```text
+https://<DOMINIO>/cadastro?convite=<TOKEN_DO_CONVITE>
+```
+
 ## Rodar localmente com SQLite (sem Docker)
 
 Requisitos: Python 3.12+ e Node 22.14+ (o `@vite-pwa/sveltekit` não carrega no Node 20; com nvm,
@@ -164,3 +187,15 @@ A pinça usa Pointer Events com dois ponteiros `touch`/`pen`. Num desktop sem to
 emulando toque no navegador (DevTools, modo dispositivo) e o cálculo
 (`tamanho inicial × distância atual ÷ distância inicial`, com os limites 16–40) é coberto em
 `apps/web/src/lib/zoom.test.ts`. `Ctrl` + roda (ou `Cmd` + roda) altera a fonte no desktop.
+
+## Versionamento
+
+Verso usa [Semantic Versioning](https://semver.org/) no formato `MAJOR.MINOR.PATCH`, com tags Git `vMAJOR.MINOR.PATCH`.
+
+- `MAJOR`: mudança incompatível, remoção de API ou migração que exige ação manual;
+- `MINOR`: nova funcionalidade compatível com o comportamento existente;
+- `PATCH`: correção, ajuste de segurança ou melhoria interna sem quebra.
+
+A versão do produto deve ser atualizada em conjunto em `apps/api/pyproject.toml` e `apps/web/package.json`. Antes de publicar uma versão, execute os testes, confira os builds Docker e crie a tag Git correspondente.
+
+Exemplos: corrigir o cálculo do cronômetro é um `PATCH`; adicionar um novo tipo de convite opcional é um `MINOR`; mudar um formato persistido sem compatibilidade é um `MAJOR`.

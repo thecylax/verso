@@ -21,10 +21,54 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.semver.outputs.version }}
+      is_stable: ${{ steps.semver.outputs.is_stable }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+
+      - name: Validate unified SemVer
+        id: semver
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          API_VERSION=$(python -c "import tomllib; print(tomllib.load(open('apps/api/pyproject.toml','rb'))['project']['version'])")
+          WEB_VERSION=$(python -c "import json; print(json.load(open('apps/web/package.json'))['version'])")
+
+          if [[ "$API_VERSION" != "$WEB_VERSION" ]]; then
+            echo "API and web versions differ: $API_VERSION != $WEB_VERSION" >&2
+            exit 1
+          fi
+
+          if [[ "${GITHUB_REF_TYPE:-}" == "tag" ]]; then
+            TAG="$GITHUB_REF_NAME"
+            if [[ "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+(-((alpha|beta|rc)\.[0-9]+))?)$ ]]; then
+              VERSION="${BASH_REMATCH[1]}"
+            else
+              echo "Invalid release tag: $TAG" >&2
+              echo "Expected vMAJOR.MINOR.PATCH or vMAJOR.MINOR.PATCH-(alpha|beta|rc).N" >&2
+              exit 1
+            fi
+
+            if [[ "$VERSION" != "$API_VERSION" ]]; then
+              echo "Release tag $TAG does not match project version $API_VERSION" >&2
+              exit 1
+            fi
+
+            if [[ "$VERSION" == *-* ]]; then
+              echo "is_stable=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "is_stable=true" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "is_stable=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "version=$API_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Validated Verso version $API_VERSION"
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -115,7 +159,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ needs.test.outputs.is_stable == 'true' && github.event_name != 'pull_request' }}
 
       - name: Build and push Docker image
         id: build-and-push

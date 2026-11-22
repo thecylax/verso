@@ -1,6 +1,6 @@
 [project]
 name = "verso-api"
-version = "1.0.0"
+version = "1.1.0-alpha.1"
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.115",

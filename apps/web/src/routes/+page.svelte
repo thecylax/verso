@@ -34,11 +34,14 @@
 	}
 </script>
 
-<main class="login-bg flex min-h-dvh items-center justify-center px-4 py-10">
+<main class="login-bg relative flex min-h-dvh items-center justify-center px-4 py-10">
+	<div class="absolute left-4 top-4 flex items-center gap-2 sm:left-6 sm:top-6" aria-label="Verso">
+		<img class="h-11 w-11 rounded-xl border border-white/10 shadow-lg sm:h-12 sm:w-12" src="/icon-192.png" alt="" />
+		<span class="text-xl font-bold tracking-tight text-slate-100 sm:text-2xl">Verso</span>
+	</div>
 	{#if !checking}
 		<div class="glass w-full max-w-sm rounded-2xl p-6 text-slate-100 sm:p-8">
-			<h1 class="mb-1 text-3xl font-bold tracking-tight">Verso</h1>
-			<p class="mb-6 text-sm text-slate-300">Entre para ver suas notas. Conta nova só entra por um link de convite.</p>
+			<h1 class="mb-1 text-3xl font-bold tracking-tight">Login</h1>
 
 			<form class="flex flex-col gap-4" onsubmit={submit} novalidate>
 				<label class="flex flex-col gap-1 text-sm">

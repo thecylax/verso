@@ -13,6 +13,13 @@ def created_at_column() -> Mapped[datetime]:
     return mapped_column(UTCDateTime, nullable=False, default=utcnow, server_default=func.now())
 
 
+class BootstrapState(Base):
+    __tablename__ = "bootstrap_state"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    consumed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
+
+
 class User(Base):
     __tablename__ = "users"
 

@@ -14,6 +14,8 @@ from app.main import app
 from app.services.bible import get_bible_client
 
 PASSWORD = "uma-senha-boa"
+BOOTSTRAP_SECRET = "teste-bootstrap-secreto"
+settings.bootstrap_secret = BOOTSTRAP_SECRET
 
 
 def _test_database_url(tmp_path_factory: pytest.TempPathFactory) -> URL:
@@ -94,9 +96,12 @@ def register(
     invite: str | None = None,
 ):
     body: dict[str, str] = {"name": name, "email": email, "password": password}
+    headers: dict[str, str] = {}
     if invite:
         body["invite"] = invite
-    return client.post("/api/auth/register", json=body)
+    else:
+        headers["X-Bootstrap-Secret"] = BOOTSTRAP_SECRET
+    return client.post("/api/auth/register", json=body, headers=headers)
 
 
 def issue_invite(client: TestClient) -> str:
